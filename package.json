@@ -1,11 +1,11 @@
 {
   "name": "sprint-13",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "`/routes` — папка с файлами роутера  \r `/controllers` — папка с файлами контроллеров пользователя и карточки   \r `/models` — папка с файлами описания схем пользователя и карточки",
+  "main": "app.js",
   "scripts": {
-    "start": "nodemon index.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node app.js",
+    "dev": "nodemon app.js",
     "lint": "npx eslint ."
   },
   "keywords": [],
@@ -13,12 +13,22 @@
   "license": "ISC",
   "dependencies": {
     "-": "^0.0.1",
+    "body-parser": "^1.19.1",
     "express": "^4.17.2",
-    "nodemon": "^2.0.15"
+    "mongoose": "^6.1.7"
   },
   "devDependencies": {
     "eslint": "^8.7.0",
     "eslint-config-airbnb-base": "^15.0.0",
-    "eslint-plugin-import": "^2.25.4"
-  }
+    "eslint-plugin-import": "^2.25.4",
+    "nodemon": "^2.0.15"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aparinalena/express-mesto.git"
+  },
+  "bugs": {
+    "url": "https://github.com/aparinalena/express-mesto/issues"
+  },
+  "homepage": "https://github.com/aparinalena/express-mesto#readme"
 }
