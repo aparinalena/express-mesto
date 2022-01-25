@@ -1,42 +1,51 @@
 const Card = require('../models/card');
+const NotFoundError = require('../errors/NotFoundError');
+const BadRequestError = require('../errors/BadRequestError');
+const ForbiddenError = require('../errors/ForbiddenError');
 
-const getCards = (req, res) => {
+const getCards = (req, res, next) => {
   Card.find({})
     .then((cards) => res.send(cards))
-    .catch((err) => res.status(500).send({ message: `Произошла ошибка: ${err}` }));
+    .catch(next);
 };
 
-const createCard = (req, res) => {
+const createCard = (req, res, next) => {
   const { name, link } = req.body;
 
   Card.create({ name, link, owner: req.user._id })
     .then((card) => res.send(card))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        return res.status(400).send({ message: `Произошла ошибка: Переданы некорректные данные при создании карточки - ${err}` });
+        next(new BadRequestError(`Произошла ошибка: Переданы некорректные данные при создании карточки - ${err}`));
+      } else {
+        next(err);
       }
-      return res.status(500).send({ message: `Произошла ошибка: ${err}` });
     });
 };
 
-const deleteCard = (req, res) => {
+const deleteCard = (req, res, next) => {
   const id = req.params.cardId;
-  Card.findByIdAndRemove(id)
+  Card.findById(id)
     .then((card) => {
-      if (card) {
-        return res.send({ message: 'Карточка удалена' });
+      if (card.owner.toString() === req.user._id) {
+        Card.deleteOne({ _id: card._id })
+          .then(res.send({ message: 'Карточка удалена' }));
+      } else if (!card) {
+        next(new NotFoundError('Карточка не найдена'));
+      } else {
+        next(new ForbiddenError('У вас нет прав на удаление данной карточки'));
       }
-      return res.status(404).send({ message: 'Карточка не найдена' });
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        return res.status(400).send({ message: 'Произошла ошибка: Передан невалидный id' });
+        next(new BadRequestError('Произошла ошибка: Передан невалидный id'));
+      } else {
+        next(err);
       }
-      return res.status(500).send({ message: `Произошла ошибка: ${err}` });
     });
 };
 
-const likeCard = (req, res) => {
+const likeCard = (req, res, next) => {
   Card.findByIdAndUpdate(
     req.params.cardId,
     { $addToSet: { likes: req.user._id } },
@@ -46,19 +55,20 @@ const likeCard = (req, res) => {
       if (card) {
         return res.send({ message: 'Поставлен лайк' });
       }
-      return res.status(404).send({ message: 'Карточка с указанным id не найдена' });
+      throw new NotFoundError('Карточка с указанным id не найдена');
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        return res.status(400).send({ message: 'Произошла ошибка: Переданы некорректные данные для постановки лайка' });
-      } if (err.name === 'CastError') {
-        return res.status(400).send({ message: 'Произошла ошибка: Передан невалидный id' });
+        next(new BadRequestError('Произошла ошибка: Переданы некорректные данные для постановки лайка'));
+      } else if (err.name === 'CastError') {
+        next(new BadRequestError('Произошла ошибка: Передан невалидный id'));
+      } else {
+        next(err);
       }
-      return res.status(500).send({ message: `Произошла ошибка: ${err}` });
     });
 };
 
-const dislikeCard = (req, res) => {
+const dislikeCard = (req, res, next) => {
   Card.findByIdAndUpdate(
     req.params.cardId,
     { $pull: { likes: req.user._id } },
@@ -68,15 +78,16 @@ const dislikeCard = (req, res) => {
       if (card) {
         return res.send({ message: 'Удалён лайк' });
       }
-      return res.status(404).send({ message: 'Карточка с указанным id не найдена' });
+      throw new NotFoundError('Карточка с указанным id не найдена');
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        return res.status(400).send({ message: 'Произошла ошибка: Переданы некорректные данные для удаления лайка' });
-      } if (err.name === 'CastError') {
-        return res.status(400).send({ message: 'Произошла ошибка: Передан невалидный id' });
+        next(new BadRequestError('Произошла ошибка: Переданы некорректные данные для удаления лайка'));
+      } else if (err.name === 'CastError') {
+        next(new BadRequestError('Произошла ошибка: Передан невалидный id'));
+      } else {
+        next(err);
       }
-      return res.status(500).send({ message: `Произошла ошибка: ${err}` });
     });
 };
 
