@@ -11,56 +11,59 @@ const createUser = (req, res, next) => {
     about,
     avatar,
     email,
+    password,
   } = req.body;
-  bcrypt
-    .hash(req.body.password, 10)
-    .then((hash) => User.create({
-      name,
-      about,
-      avatar,
-      email,
-      password: hash,
-    }))
-    .then(() => res.send({
-      data: {
+  User.findOne({ email })
+    .then((user) => {
+      if (user) {
+        throw new ConflictError('Произошла ошибка: Пользователь с таким email уже существует');
+      } else {
+        return bcrypt.hash(password, 10);
+      }
+    })
+    .then((hash) => {
+      User.create({
         name,
         about,
         avatar,
         email,
-      },
-    }))
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        next(new BadRequestError(`Произошла ошибка: ${err} Переданы некорректные данные при создании пользователя`));
-      } else if (err.code === 11000) {
-        next(new ConflictError('Пользователь с таким email уже существует'));
-      } else {
-        next(err);
-      }
-    });
+        password: hash,
+      })
+        .then(() => {
+          res.send({
+            data: {
+              name,
+              about,
+              avatar,
+              email,
+            },
+          });
+        });
+    })
+    .catch(next);
 };
 
 const getUser = (req, res, next) => {
-  const { id } = req.params;
-  User.findById(id)
+  User.findById(req.params._id)
     .then((user) => {
       if (user) {
-        return res.send(user);
+        return res.send({ data: user });
       }
       throw new NotFoundError('Пользователь не найден');
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        next(BadRequestError('Произошла ошибка: Передан невалидный id'));
+        next(new BadRequestError('Произошла ошибка: Передан невалидный id'));
       } else {
         next(err);
       }
-    });
+    })
+    .catch(next);
 };
 
 const getUsers = (req, res, next) => {
   User.find({})
-    .then((users) => res.send(users))
+    .then((users) => res.send({ data: users }))
     .catch(next);
 };
 
@@ -72,17 +75,16 @@ const updateUser = (req, res, next) => {
   )
     .then((user) => {
       if (user) {
-        return res.send(user);
+        return res.send({ data: user });
       }
       throw new NotFoundError('Пользователь не найден');
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        next(new BadRequestError(`Произошла ошибка: ${err} Переданы некорректные данные при обновлении профиля`));
-      } else {
-        next(err);
+        throw new BadRequestError('Произошла ошибка: Переданы некорректные данные при обновлении профиля');
       }
-    });
+    })
+    .catch(next);
 };
 
 const updateUserAvatar = (req, res, next) => {
@@ -93,29 +95,33 @@ const updateUserAvatar = (req, res, next) => {
   )
     .then((user) => {
       if (user) {
-        return res.send(user);
+        return res.send({ data: user });
       }
       throw new NotFoundError('Пользователь не найден');
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        next(new BadRequestError(`Произошла ошибка: ${err} Переданы некорректные данные при обновлении аватара`));
-      } else {
-        next(err);
+        throw new BadRequestError('Произошла ошибка: Переданы некорректные данные при обновлении аватара');
       }
-    });
+    })
+    .catch(next);
 };
 
 const login = (req, res, next) => {
-  const {
-    email,
-    password,
-  } = req.body;
+  const { email, password } = req.body;
 
   return User.findUserByCredentials(email, password)
     .then((user) => {
-      const token = jwt.sign({ _id: user._id }, 'some-secret-key', { expiresIn: '7d' });
-      res.send({ token });
+      const token = jwt.sign(
+        { _id: user._id },
+        'some-secret-key',
+        { expiresIn: '7d' },
+      );
+      res.cookie('jwt', token, {
+        maxAge: 3600000 * 24 * 7,
+        httpOnly: true,
+      })
+        .send('Авторизация прошла успешно');
     })
     .catch(next);
 };
@@ -123,7 +129,7 @@ const login = (req, res, next) => {
 const getUserData = (req, res, next) => {
   User.findById(req.user._id)
     .then((user) => {
-      res.send(user);
+      res.send({ data: user });
     })
     .catch(next);
 };
