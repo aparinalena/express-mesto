@@ -9,7 +9,7 @@
     "lint": "npx eslint ."
   },
   "keywords": [],
-  "author": "",
+  "author": "Aparina Alena",
   "license": "ISC",
   "dependencies": {
     "bcrypt": "^5.0.1",
