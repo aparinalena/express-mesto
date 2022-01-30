@@ -31,7 +31,7 @@ const createUser = (req, res, next) => {
       })
         .then(() => {
           res.send({
-            data: {
+            user: {
               name,
               about,
               avatar,
@@ -47,7 +47,7 @@ const getUser = (req, res, next) => {
   User.findById(req.params._id)
     .then((user) => {
       if (user) {
-        return res.send({ data: user });
+        return res.send(user);
       }
       throw new NotFoundError('Пользователь не найден');
     })
@@ -63,7 +63,7 @@ const getUser = (req, res, next) => {
 
 const getUsers = (req, res, next) => {
   User.find({})
-    .then((users) => res.send({ data: users }))
+    .then((users) => res.send(users))
     .catch(next);
 };
 
@@ -75,7 +75,7 @@ const updateUser = (req, res, next) => {
   )
     .then((user) => {
       if (user) {
-        return res.send({ data: user });
+        return res.send(user);
       }
       throw new NotFoundError('Пользователь не найден');
     })
@@ -95,7 +95,7 @@ const updateUserAvatar = (req, res, next) => {
   )
     .then((user) => {
       if (user) {
-        return res.send({ data: user });
+        return res.send(user);
       }
       throw new NotFoundError('Пользователь не найден');
     })
@@ -118,13 +118,13 @@ const login = (req, res, next) => {
         { expiresIn: '7d' },
       );
       res
-        .cookie('jwt', token, {
+        .cookie('token', token, {
           maxAge: 3600000 * 24 * 7,
           httpOnly: true,
           sameSite: 'none',
           secure: true,
         })
-        .send({ message: 'Авторизация прошла успешно' });
+        .send({ token });
     })
     .catch(next);
 };
@@ -132,7 +132,7 @@ const login = (req, res, next) => {
 const getUserData = (req, res, next) => {
   User.findById(req.user._id)
     .then((user) => {
-      res.send({ data: user });
+      res.send(user);
     })
     .catch(next);
 };
