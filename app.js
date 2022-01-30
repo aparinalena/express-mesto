@@ -1,4 +1,5 @@
 require('dotenv').config();
+const cors = require('cors');
 const express = require('express');
 const mongoose = require('mongoose');
 const cookieParser = require('cookie-parser');
@@ -14,31 +15,22 @@ const { PORT = 3000 } = process.env;
 
 const app = express();
 
-const corsConfig = [
-  'http://localhost:3000',
-  'http://mestofront.aparinalena.nomoredomains.work',
-  'https://mestofront.aparinalena.nomoredomains.work',
-  'http://api.mesto.aparinalena.nomoredomains.work',
-  'https://api.mesto.aparinalena.nomoredomains.work',
-];
+const corsConfig = {
+  origin: [
+    'http://localhost:3000',
+    'http://mestofront.aparinalena.nomoredomains.work',
+    'https://mestofront.aparinalena.nomoredomains.work',
+    'http://api.mesto.aparinalena.nomoredomains.work',
+    'https://api.mesto.aparinalena.nomoredomains.work',
+  ],
+  methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204,
+  allowedHeaders: ['Content-Type', 'origin', 'Authorization'],
+  credentials: true,
+};
 
-app.use((req, res, next) => {
-  const { method } = req;
-  const { origin } = req.headers;
-  const DEFAULT_ALLOWED_METHODS = 'GET,HEAD,PUT,PATCH,POST,DELETE';
-  const requestHeaders = req.headers['access-control-request-headers'];
-  if (corsConfig.includes(origin)) {
-    res.header('Access-Control-Allow-Origin', origin);
-    res.header('Access-Control-Allow-Credentials', 'true');
-  }
-  if (method === 'OPTIONS') {
-    res.header('Access-Control-Allow-Methods', DEFAULT_ALLOWED_METHODS);
-    res.header('Access-Control-Allow-Headers', requestHeaders);
-    res.end();
-  }
-
-  next();
-});
+app.use('*', cors(corsConfig));
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -63,7 +55,11 @@ app.use((req, res, next) => {
   next(new NotFoundError('Страница не существует'));
 });
 
-mongoose.connect('mongodb://localhost:27017/mestodb', {});
+mongoose.connect('mongodb://localhost:27017/mestodb', {
+  useNewUrlParser: true,
+  useCreateIndex: true,
+  useFindAndModify: false,
+});
 
 app.use(errorLogger);
 app.use(errors());
