@@ -7,37 +7,34 @@ const ConflictError = require('../errors/ConflictError');
 
 const createUser = (req, res, next) => {
   const {
-    name,
-    about,
-    avatar,
-    email,
+    name, about, avatar, email, password,
   } = req.body;
-  bcrypt
-    .hash(req.body.password, 10)
-    .then((hash) => User.create({
-      name,
-      about,
-      avatar,
-      email,
-      password: hash,
-    }))
-    .then(() => res.send({
-      data: {
-        name,
-        about,
-        avatar,
-        email,
-      },
-    }))
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        next(new BadRequestError('Произошла ошибка: Переданы некорректные данные при создании пользователя'));
-      } else if (err.name === 'MongoServerError') {
-        next(new ConflictError('Произошла ошибка: Пользователь с таким email уже существует'));
-      } else {
-        next(err);
+
+  User.findOne({ email })
+    .then((user) => {
+      if (user) {
+        throw new ConflictError('Пользователь с таким email уже существует');
       }
-    });
+      return bcrypt.hash(password, 10);
+    })
+    .then((hash) => User.create({
+      name, about, avatar, email, password: hash,
+    })
+      .then((user) => res.status(200).send({
+        user: {
+          name: user.name,
+          about: user.about,
+          avatar: user.avatar,
+          _id: user._id,
+          email: user.email,
+        },
+      }))
+      .catch((err) => {
+        if (err.name === 'ValidationError') {
+          throw new BadRequestError('Введены невалидные данные');
+        }
+      }))
+    .catch(next);
 };
 
 const getUser = (req, res, next) => {
