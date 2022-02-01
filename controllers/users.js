@@ -11,36 +11,33 @@ const createUser = (req, res, next) => {
     about,
     avatar,
     email,
-    password,
   } = req.body;
-  User.findOne({ email })
-    .then((user) => {
-      if (user) {
-        throw new ConflictError('Произошла ошибка: Пользователь с таким email уже существует');
-      } else {
-        return bcrypt.hash(password, 10);
-      }
-    })
-    .then((hash) => {
-      User.create({
+  bcrypt
+    .hash(req.body.password, 10)
+    .then((hash) => User.create({
+      name,
+      about,
+      avatar,
+      email,
+      password: hash,
+    }))
+    .then(() => res.send({
+      data: {
         name,
         about,
         avatar,
         email,
-        password: hash,
-      })
-        .then(() => {
-          res.send({
-            user: {
-              name,
-              about,
-              avatar,
-              email,
-            },
-          });
-        });
-    })
-    .catch(next);
+      },
+    }))
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        next(new BadRequestError('Произошла ошибка: Переданы некорректные данные при создании пользователя'));
+      } else if (err.name === 'MongoServerError') {
+        next(new ConflictError('Произошла ошибка: Пользователь с таким email уже существует'));
+      } else {
+        next(err);
+      }
+    });
 };
 
 const getUser = (req, res, next) => {
