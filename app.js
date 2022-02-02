@@ -20,8 +20,6 @@ const corsConfig = {
     'http://localhost:3000',
     'http://mestofront.aparinalena.nomoredomains.work',
     'https://mestofront.aparinalena.nomoredomains.work',
-    'http://api.mesto.aparinalena.nomoredomains.work',
-    'https://api.mesto.aparinalena.nomoredomains.work',
   ],
   methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
   preflightContinue: false,
