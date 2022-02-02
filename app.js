@@ -15,6 +15,16 @@ const { PORT = 3000 } = process.env;
 
 const app = express();
 
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(cookieParser());
+
+mongoose.connect('mongodb://localhost:27017/mestodb', {
+  useNewUrlParser: true,
+  useCreateIndex: true,
+  useFindAndModify: false,
+});
+
 const corsConfig = {
   origin: [
     'http://localhost:3000',
@@ -24,15 +34,11 @@ const corsConfig = {
   methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
   preflightContinue: false,
   optionsSuccessStatus: 204,
-  allowedHeaders: ['Content-Type', 'origin', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'origin', 'Authorization', 'Accept'],
   credentials: true,
 };
 
 app.use('*', cors(corsConfig));
-
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(cookieParser());
 
 app.use(requestLogger);
 
@@ -53,11 +59,6 @@ app.use((req, res, next) => {
   next(new NotFoundError('Страница не существует'));
 });
 
-mongoose.connect('mongodb://localhost:27017/mestodb', {
-  useNewUrlParser: true,
-  useCreateIndex: true,
-  useFindAndModify: false,
-});
 
 app.use(errorLogger);
 app.use(errors());
