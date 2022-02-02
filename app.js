@@ -25,20 +25,31 @@ mongoose.connect('mongodb://localhost:27017/mestodb', {
   useFindAndModify: false,
 });
 
-const corsConfig = {
-  origin: [
-    'http://localhost:3000',
-    'http://mestofront.aparinalena.nomoredomains.work',
-    'https://mestofront.aparinalena.nomoredomains.work',
-  ],
-  methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
-  preflightContinue: false,
-  optionsSuccessStatus: 204,
-  allowedHeaders: ['Content-Type', 'origin', 'Authorization', 'Accept'],
-  credentials: true,
-};
+const corsConfig = [
+  'http://localhost:3000',
+  'http://mestofront.aparinalena.nomoredomains.work',
+  'https://mestofront.aparinalena.nomoredomains.work',
+  'http://api.mesto.aparinalena.nomoredomains.work',
+  'https://api.mesto.aparinalena.nomoredomains.work',
+];
 
-app.use('*', cors(corsConfig));
+app.use((req, res, next) => {
+  const { origin } = req.headers;
+  const { method } = req;
+  const DEFAULT_ALLOWED_METHODS = 'GET,HEAD,PUT,PATCH,POST,DELETE';
+  const requestHeaders = req.headers['access-control-request-headers'];
+  if (corsConfig.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Access-Control-Allow-Credentials', 'true');
+  }
+  if (method === 'OPTIONS') {
+    res.header('Access-Control-Allow-Methods', DEFAULT_ALLOWED_METHODS);
+    res.header('Access-Control-Allow-Headers', requestHeaders);
+    res.end();
+  }
+
+  next();
+});
 
 app.use(requestLogger);
 
